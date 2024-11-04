@@ -142,6 +142,7 @@ wire vsync = project_uo_out[3];
 
 assign uo_out = {blue, red};
 assign uio_out = {2'b00, vsync, hsync, green};
+assign uio_oe = 8'b11111111;
 
 wire _unused = &{uio_in, project_uio_out, project_uio_oe, 1'b0};
 
