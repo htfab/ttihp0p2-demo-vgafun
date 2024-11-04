@@ -1,20 +1,13 @@
-<!---
-
-This file is used to generate your project datasheet. Please fill in the information below and delete any unused
-sections.
-
-You can also include images in this folder and reference them in the markdown. Each image must be less than
-512 kb in size, and the combined size of all images must be less than 1 MB.
--->
-
 ## How it works
 
-Explain how your project works
+It's the digital block from algofoogle's [https://github.com/algofoogle/tt08-vga-fun/](TT08 VGA FUN!) project, with a simple sequencer loop to make it work standalone and some dithering to simulate 8 bit output on the 4 bit Digilent PmodVGA.
 
 ## How to test
 
-Explain how to use your project
+Plug it into a VGA monitor, reset the project, then sit back and enjoy.
+
+You can also manually select the mode and bit depth if you override the sequencer by pulling bit 7 of the input high.
 
 ## External hardware
 
-List external hardware used in your project (e.g. PMOD, LED display, etc), if any
+Digilent PmodVGA
