@@ -67,15 +67,6 @@ always @(posedge clk) begin
     project_ui_in[3:0] <= {counter[31:30], 2'b00};
 end
 
-reg [31:0] lfsr;
-always @(posedge clk) begin
-    if(!rst_n) begin
-        lfsr <= -1;
-    end else begin
-        lfsr <= {lfsr[30:0], lfsr[31]^lfsr[29]^lfsr[25]^lfsr[24]};
-    end
-end
-
 reg [7:0] r_target;
 reg [7:0] g_target;
 reg [7:0] b_target;
@@ -125,20 +116,44 @@ always_comb begin
     endcase
 end
 
-wire [4:0] r_diff = {1'b0, r_target[3:0]} - {1'b0, r_target[7:4]};
-wire [4:0] g_diff = {1'b0, g_target[3:0]} - {1'b0, g_target[7:4]};
-wire [4:0] b_diff = {1'b0, b_target[3:0]} - {1'b0, b_target[7:4]};
-
-wire r_bump = (r_diff != 0) && (r_diff[3:0] >= lfsr[19:16]);
-wire g_bump = (g_diff != 0) && (g_diff[3:0] >= lfsr[11:8]);
-wire b_bump = (b_diff != 0) && (b_diff[3:0] >= lfsr[3:0]);
-
-wire [3:0] red   = r_target[7:4] - r_diff[4] + r_bump;
-wire [3:0] green = g_target[7:4] - g_diff[4] + g_bump;
-wire [3:0] blue  = b_target[7:4] - b_diff[4] + b_bump;
-
 wire hsync = project_uo_out[7];
 wire vsync = project_uo_out[3];
+
+reg [4:0] dither_threshold;
+always @(posedge clk) begin
+    if(!rst_n || (vsync == project_ui_in[7])) begin
+        dither_threshold <= 0;
+    end else begin
+        if (dither_threshold >= 12) begin  // 5 + 12 = 17 = 8'b00010001
+            dither_threshold <= dither_threshold - 12;
+        end else begin
+            dither_threshold <= dither_threshold + 5;
+        end
+    end
+end
+
+wire [3:0] r_round = r_target[7:4];
+wire r_sub = r_target < {r_round, r_round};
+wire [3:0] r_int = r_sub ? (r_round - 1) : r_round;
+wire [4:0] r_frac = r_target - {r_int, r_int};
+
+wire [3:0] g_round = g_target[7:4];
+wire g_sub = g_target < {g_round, g_round};
+wire [3:0] g_int = g_sub ? (g_round - 1) : g_round;
+wire [4:0] g_frac = g_target - {g_int, g_int};
+
+wire [3:0] b_round = b_target[7:4];
+wire b_sub = b_target < {b_round, b_round};
+wire [3:0] b_int = b_sub ? (b_round - 1) : b_round;
+wire [4:0] b_frac = b_target - {b_int, b_int};
+
+wire r_bump = r_frac > dither_threshold;
+wire g_bump = g_frac > dither_threshold;
+wire b_bump = b_frac > dither_threshold;
+
+wire [3:0] red   = r_int + r_bump;
+wire [3:0] green = g_int + g_bump;
+wire [3:0] blue  = b_int + b_bump;
 
 assign uo_out = {blue, red};
 assign uio_out = {2'b00, vsync, hsync, green};
